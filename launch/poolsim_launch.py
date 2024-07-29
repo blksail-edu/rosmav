@@ -57,7 +57,7 @@ def generate_launch_description():
     """
 
     sim = 'bluerov2_camera.world'
-    path = f'~/ROS2/auvc/gazebo_bluerov2/worlds/{sim}'
+    path = f'~/gazebo_bluerov2/worlds/{sim}'
     path = sim
     print(path)
 
