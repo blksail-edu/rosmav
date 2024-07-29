@@ -38,6 +38,8 @@ class BlueRov2CameraInterface(Node):
         )
         self.video_sink = self.get_parameter("video_sink").value
 
+        self.cvb = CvBridge()
+
         pipeline_str = " ".join(
             [self.video_src, self.video_codec, self.video_decode, self.video_sink]
         )
@@ -50,8 +52,6 @@ class BlueRov2CameraInterface(Node):
         self.appsink.connect("new-sample", self.on_new_sample)
 
         self.publisher = self.create_publisher(Image, "bluerov2/camera", 10)
-
-        self.cvb = CvBridge()
 
     def on_new_sample(self, sink):
         sample = sink.emit("pull-sample")
@@ -70,6 +70,7 @@ class BlueRov2CameraInterface(Node):
         )
 
         msg = self.cvb.cv2_to_imgmsg(np_image, encoding="bgr8")
+        msg.header.stamp = self.get_clock().now().to_msg()
         self.publisher.publish(msg)
 
         buffer.unmap(info)
