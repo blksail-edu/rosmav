@@ -5,6 +5,7 @@ from rclpy.node import Node
 from std_srvs.srv import SetBool
 from pymavlink import mavutil
 from mavros_msgs.msg import OverrideRCIn, ManualControl
+from std_msgs.msg import Int16
 from sensor_msgs.msg import (
     FluidPressure as Pressure,
     Temperature,
@@ -14,6 +15,12 @@ from sensor_msgs.msg import (
 
 
 class ROSBluerov2Interface(Node):
+    _x = 0
+    _y = 0
+    _z = 0
+    _r = 0
+    _buttons = 0
+
     def __init__(self):
         super().__init__("ros_bluerov2_interface")
         self.declare_parameter("udp_params", "udpin:0.0.0.0:14550")
@@ -53,6 +60,9 @@ class ROSBluerov2Interface(Node):
         self.magnetic_field_pub = self.create_publisher(
             MagneticField, "bluerov2/magnetic_field", 10
         )
+
+        # Create a publisher for the heading
+        self.heading_pub = self.create_publisher(Int16, "bluerov2/heading", 10)
 
         # Create a publisher for the IMU message
         self.imu_pub = self.create_publisher(Imu, "bluerov2/imu", 10)
@@ -105,7 +115,7 @@ class ROSBluerov2Interface(Node):
             elif msg.get_type() == "VFR_HUD":
                 self._handle_vfr_hud(msg)
 
-    def override_rc_callback(self, msg):
+    def override_rc_callback(self, msg: OverrideRCIn):
         """
         Callback for the /bluerov2/override_rc subscriber
 
@@ -193,24 +203,30 @@ class ROSBluerov2Interface(Node):
             f"VFR HUD: {msg.airspeed}, {msg.groundspeed}, {msg.heading}, {msg.throttle}, {msg.alt}"
         )
 
-        # TODO: Implement
-        pass
+        heading_msg = Int16()
+        heading_msg.data = msg.heading
+        self.heading_pub.publish(heading_msg)
 
-    def manual_control_callback(self, msg):
+    def manual_control_callback(self, msg: ManualControl):
         """
         Send manual control message
 
         See https://mavlink.io/en/messages/common.html#MANUAL_CONTROL
         """
+        self._x = int(msg.x * 10) if msg.x else self._x
+        self._y = int(msg.y * 10) if msg.y else self._y
         # msg.z is between -100 and 100, but the MAVLink message expects a value between 0 and 1000
+        self._z = int((msg.z * 10) / 2 + 500) if msg.z else self._z
+        self._r = int(msg.r * 10) if msg.r else self._r
+        self._buttons = int(msg.buttons) if msg.buttons else self._buttons
 
         self.mavlink.mav.manual_control_send(
             self.mavlink.target_system,
-            int(msg.x * 10),
-            int(msg.y * 10),
-            int((msg.z * 10) / 2 + 500),
-            int(msg.r * 10),
-            int(msg.buttons),
+            self._x,
+            self._y,
+            self._z,
+            self._r,
+            self._buttons,
         )
 
 
