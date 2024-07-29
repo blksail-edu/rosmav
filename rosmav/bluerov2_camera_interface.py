@@ -4,6 +4,8 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 import gi
+from cv_bridge import CvBridge
+import numpy as np
 
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst
@@ -49,6 +51,8 @@ class BlueRov2CameraInterface(Node):
 
         self.publisher = self.create_publisher(Image, "bluerov2/camera", 10)
 
+        self.cvb = CvBridge()
+
     def on_new_sample(self, sink):
         sample = sink.emit("pull-sample")
         buffer = sample.get_buffer()
@@ -59,12 +63,13 @@ class BlueRov2CameraInterface(Node):
 
         caps_structure = sample.get_caps().get_structure(0)
 
-        msg = Image()
-        msg.data = info.data
-        msg.width = caps_structure.get_value("width")
-        msg.height = caps_structure.get_value("height")
-        msg.encoding = "bgr8"
-        msg.step = msg.width * 3
+        np_image = np.ndarray(
+            (caps_structure.get_value("height"), caps_structure.get_value("width"), 3),
+            buffer=buffer.extract_dup(0, buffer.get_size()),
+            dtype=np.uint8,
+        )
+
+        msg = self.cvb.cv2_to_imgmsg(np_image, encoding="bgr8")
         self.publisher.publish(msg)
 
         buffer.unmap(info)
