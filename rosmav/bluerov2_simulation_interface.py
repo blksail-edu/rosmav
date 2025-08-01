@@ -35,7 +35,7 @@ class BlueROV2SimulationInterface(Node):
         self.declare_parameter("thrust_min", 40.2)
         self.declare_parameter("thrust_max", 51.5)
 
-        self.thrust_min = self.get_parameter("thurst_min").value
+        self.thrust_min = self.get_parameter("thrust_min").value
         self.thrust_max = self.get_parameter("thrust_min").value # ignore thrust_max
 
         # Create subscription for user-defined ManualControl messages
