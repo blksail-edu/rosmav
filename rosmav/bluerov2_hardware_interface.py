@@ -236,11 +236,11 @@ class BlueROV2HardwareInterface(Node):
 
         See https://mavlink.io/en/messages/common.html#MANUAL_CONTROL
         """
-        self._x = int(msg.x * 10) if msg.x else self._x
-        self._y = int(msg.y * 10) if msg.y else self._y
+        self._x = int(msg.x * 10)
+        self._y = int(msg.y * 10)
         # msg.z is between -100 and 100, but the MAVLink message expects a value between 0 and 1000
-        self._z = int((msg.z * 10) / 2 + 500) if msg.z else self._z
-        self._r = int(msg.r * 10) if msg.r else self._r
+        self._z = int((msg.z * 10) / 2 + 500)
+        self._r = int(msg.r * 10)
         self._buttons = int(msg.buttons) if msg.buttons else self._buttons
 
         self.mavlink.mav.manual_control_send(
